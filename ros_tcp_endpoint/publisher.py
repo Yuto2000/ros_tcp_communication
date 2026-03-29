@@ -53,18 +53,9 @@ class RosPublisher(RosSender):
         Returns:
             None: Explicitly return None so behaviour can be
         """
-        # message_type = type(self.msg)
-        # message = deserialize_message(data, message_type)
-
-        try:
-            msg = convert_data(self.topic, data)  
-            if msg:
-                print(f"[DEBUG] Publishing parsed message to {self.topic}")
-                self.pub.publish(msg)
-            else:
-                print(f"[WARNING] Could not convert data for topic {self.topic}")
-        except Exception as e:
-            print(f"[ERROR] Failed to process message for topic {self.topic}: {e}")
+        message_type = type(self.msg)
+        message = deserialize_message(data, message_type)
+        self.pub.publish(message)
 
         return None
 

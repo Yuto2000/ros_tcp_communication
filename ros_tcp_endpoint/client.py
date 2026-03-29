@@ -191,10 +191,12 @@ class ClientThread(threading.Thread):
         halt_event = threading.Event()
         self.tcp_server.unity_tcp_sender.start_sender(self.conn, halt_event)
         try:
+            msg_count = 0
             while not halt_event.is_set():
                 destination, data = self.read_message(self.conn)
-
-                print(f"[DEBUG] Received raw message for {destination}: {list(data)}")
+                msg_count += 1
+                if msg_count <= 20 or msg_count % 100 == 0:
+                    self.tcp_server.loginfo("MSG#{} dest='{}' len={}".format(msg_count, destination, len(data)))
 
                 # Process this message that was sent from Unity
                 if self.tcp_server.pending_srv_id is not None:
@@ -218,11 +220,7 @@ class ClientThread(threading.Thread):
                     ros_communicator = self.tcp_server.publishers_table[destination]
                     ros_communicator.send(data)
                 else:
-                    error_msg = "Not registered to publish topic '{}'! Valid publish topics are: {} ".format(
-                        destination, self.tcp_server.publishers_table.keys()
-                    )
-                    self.tcp_server.send_unity_error(error_msg)
-                    self.tcp_server.logerr(error_msg)
+                    self.tcp_server.logwarn("Dropping message for unregistered topic '{}'".format(destination))
         except IOError as e:
             self.tcp_server.logerr("Exception: {}".format(e))
         finally:
